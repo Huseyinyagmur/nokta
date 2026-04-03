@@ -449,31 +449,110 @@ Rules:
 
 ### Hard Gates (Binary — fail any = instant reject)
 
-| Gate | Command | Pass Condition |
-|------|---------|----------------|
-| TypeScript | `npx tsc --noEmit` | Zero errors |
-| ESLint | `npx eslint . --ext .ts,.tsx` | Zero errors |
-| Bundle Size | `npx expo export --dump-sourcemap` | JS bundle < 2MB |
-| Dep Lock | `diff package.json` | No unauthorized new deps |
+Hard gates are non-negotiable. A single failure stops the pipeline immediately. No partial credit. No exceptions.
+
+| Gate | Command | Pass Condition | Failure Action |
+|------|---------|----------------|----------------|
+| TypeScript | `npx tsc --noEmit` | Zero type errors | ❌ REJECT — fix all type errors |
+| ESLint | `npx eslint . --ext .ts,.tsx` | Zero lint errors | ❌ REJECT — fix all lint violations |
+| Bundle Size | `npx expo export --dump-sourcemap` | JS bundle < 2MB | ❌ REJECT — remove unused imports/deps |
+| Dep Lock | `diff package.json` | No unauthorized new deps | ❌ REJECT — revert package.json changes |
+| Immutable Files | CI diff check | No changes to protected files | ❌ REJECT — revert immutable file changes |
+
+**Why hard gates?** Soft warnings become ignored warnings. Binary gates force quality at the point of contribution, not after merge.
+
+### Running Hard Gates Locally
+
+Run these before opening any PR. CI will run them again, but catching failures locally saves time.
+
+```bash
+# Gate 1: TypeScript
+npx tsc --noEmit
+# Expected: no output = pass. Any output = fail.
+
+# Gate 2: ESLint
+npx eslint . --ext .ts,.tsx
+# Expected: no output = pass. Any output = fail.
+
+# Gate 3: Bundle Size
+npx expo export --dump-sourcemap
+# Check: output/_expo/static/js/*.js must be < 2MB combined.
+
+# Gate 4: Dependency check
+git diff package.json
+# Expected: no output = pass. Any changes = fail unless maintainer approved.
+```
+
+### Scalar Metric: Section Score
+
+For Path A (program.md edits), the scalar metric is the section score computed by `scripts/section_score.py`.
+
+```
+section_score = sum(weight_i × pass_i for each check_i in checklist) / total_weight × 100
+```
+
+Where:
+- `weight_i` = weight assigned to check i in `checklists/section_XX.yml`
+- `pass_i` = 1 if check passes, 0 if it fails
+- `total_weight` = sum of all weights in the checklist
+
+**Score range:** 0–100. No decimals. Integer only.
 
 ### Scalar Metric: Golden Flow Pass Rate
 
+For Path C (implementation), the scalar metric is the golden flow pass rate.
+
 ```
-metric = (passing_golden_flow_tests / total_golden_flow_tests) × 100
+golden_flow_score = (passing_golden_flow_tests / total_golden_flow_tests) × 100
 ```
 
 Golden flow tests (Jest + React Native Testing Library):
-1. **Create Idea** — FAB → enter spark → DOT idea created
-2. **Refinement** — Chat opens → system question → answer → maturity transitions
-3. **Spec View** — Spec card → populated fields match conversation
-4. **Persistence** — Create → close → reopen → data intact
+
+| # | Test Name | What It Validates |
+|---|-----------|-------------------|
+| 1 | Create Idea | FAB → enter spark → DOT idea created in storage |
+| 2 | Refinement Flow | Chat opens → system question → user answer → maturity transitions |
+| 3 | Spec View | Spec card → all populated fields match conversation history |
+| 4 | Persistence | Create idea → close app → reopen → all data intact |
 
 ### Merge Rule
 
-**PR merges if: all hard gates pass AND golden_flow_pass_rate(PR) ≥ golden_flow_pass_rate(main).**
+**A PR merges if and only if:**
 
----
+```
+ALL hard gates pass
+AND
+score(PR branch) >= score(main branch)
+```
 
+Both conditions must hold simultaneously. Passing all hard gates but regressing the score → reject. Improving the score but failing a hard gate → reject.
+
+### Score Interpretation
+
+| Score | Meaning |
+|-------|---------|
+| 100 | All checklist items satisfied. Section is complete. |
+| 80–99 | Most items satisfied. Minor gaps remain. |
+| 60–79 | Core structure present but significant content missing. |
+| 40–59 | Partial completion. Multiple checklist items failing. |
+| 0–39 | Minimal content. Most checklist items failing. |
+
+### Regression Prevention
+
+The ratchet prevents score regression. Once a section reaches a score, it can never go below that score again.
+
+```
+if score(PR) >= score(main):
+    → ELIGIBLE FOR MERGE
+else:
+    → REJECT: "Score regressed: PR={score(PR)} < main={score(main)}"
+```
+
+This means:
+- Removing content from a section will almost always be rejected.
+- Rewriting a section must produce equal or higher score to be accepted.
+- Adding content to a section is the safest strategy.
+  
 ## 9. THE RATCHET LOOP
 
 The ratchet is the core quality enforcement mechanism of Nokta. Every PR must improve or maintain the current score. The score never drops. This is not a suggestion — it is a hard constraint enforced by CI.
