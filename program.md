@@ -120,20 +120,49 @@ All four commands must pass before any PR is opened.
 
 ---
 
-## 3. NON-GOALS
+3. NON-GOALS
+These are explicitly out of scope for v0.1. Building any of these will result in PR rejection. Each item below includes the rationale — understanding WHY something is excluded is as important as knowing WHAT is excluded.
+Infrastructure Non-Goals
 
-These are explicitly out of scope for v0.1. Building any of these will result in PR rejection.
+Backend server — No Express, no NestJS, no Supabase server, no Firebase, no REST API. All data is local (AsyncStorage). Reason: reduces infrastructure complexity to zero; contributors focus on product logic, not DevOps.
+Database — No SQLite, no Realm, no PostgreSQL. AsyncStorage key-value pairs are the only persistence layer. Reason: a database adds schema migration complexity that is irrelevant for a single-user MVP.
+Cloud storage — No AWS S3, no Google Cloud Storage, no Cloudflare R2. No files are uploaded anywhere. Reason: cloud storage requires credentials, IAM policies, and cost management — all deferred to v0.2+.
+Push notifications — No Firebase Cloud Messaging, no Expo Notifications, no APNs integration. Reason: notifications require a backend to trigger them, which is a non-goal above.
 
-- **Backend server** — No Express, no NestJS, no Supabase server. All data is local (AsyncStorage). Reason: reduces infrastructure complexity to zero; students focus on product logic.
-- **Authentication / login** — No user accounts, no OAuth, no JWT. The app is single-user, local-first. Reason: auth adds 2+ weeks of work and is irrelevant to the core idea-maturation flow.
-- **App Store / Play Store publish** — No EAS Build, no signing, no store listing. APK is for demo only. Reason: store submission is a distraction from product iteration.
-- **Real-time collaboration** — No multiplayer, no shared ideas, no WebSocket. Reason: single-user MVP must work perfectly before multi-user.
-- **Payment / monetization** — No in-app purchases, no subscriptions, no ads. Reason: premature monetization kills MVP focus.
-- **Analytics / telemetry** — No Mixpanel, no Amplitude, no crash reporting. Reason: adds dependency weight and privacy concerns for zero v0.1 value.
-- **Offline-first sync** — Data lives in AsyncStorage, period. No conflict resolution, no delta sync. Reason: sync is a hard distributed systems problem — defer to v0.2+.
-- **Internationalization (i18n)** — English only for v0.1. Turkish can be added in v0.2. Reason: i18n adds string management overhead that slows iteration.
+Authentication & Privacy Non-Goals
 
----
+Authentication / login — No user accounts, no OAuth, no JWT, no magic links, no biometric login. The app is single-user, local-first. Reason: auth adds 2+ weeks of work and is irrelevant to the core idea-maturation flow.
+Multi-user / teams — No shared workspaces, no user roles, no permissions system. Reason: collaboration requires a backend and conflict resolution — both deferred.
+End-to-end encryption — No encrypted storage, no key management. Reason: local-only data on a personal device has an acceptable security posture for MVP.
+
+Distribution Non-Goals
+
+App Store / Play Store publish — No EAS Build, no signing, no store listing, no TestFlight, no Google Play internal track. APK is for demo only. Reason: store submission is a distraction from product iteration.
+Web version — No React Native Web, no Next.js, no PWA. Mobile only. Reason: responsive web layout is a separate design problem; mobile-first ensures focus.
+Desktop app — No Electron, no Tauri, no macOS/Windows build. Reason: desktop is out of scope for a mobile-first MVP.
+
+Feature Non-Goals
+
+Real-time collaboration — No multiplayer, no shared ideas, no WebSocket, no CRDT. Reason: single-user MVP must work perfectly before multi-user complexity is introduced.
+Payment / monetization — No in-app purchases, no subscriptions, no ads, no Stripe integration. Reason: premature monetization kills MVP focus and adds legal/compliance overhead.
+Analytics / telemetry — No Mixpanel, no Amplitude, no Segment, no crash reporting, no Sentry. Reason: adds dependency weight and privacy concerns for zero v0.1 value.
+Offline-first sync — Data lives in AsyncStorage, period. No conflict resolution, no delta sync, no background sync. Reason: sync is a hard distributed systems problem — defer to v0.2+.
+Internationalization (i18n) — English only for v0.1. Turkish can be added in v0.2. Reason: i18n adds string management overhead that slows iteration.
+Dark mode / theming — No theme system, no color mode toggle. One default light theme only. Reason: theming is a UI polish concern, not a product core concern for v0.1.
+Search / filtering — No full-text search, no tag filtering, no sorting options beyond default (updatedAt desc). Reason: search is only valuable when there are enough ideas to make finding them hard — not an MVP problem.
+Export / import — No JSON export, no PDF export, no CSV, no import from other tools. Share button copies to clipboard only. Reason: export formats require format negotiation and versioning — deferred.
+Undo / redo — No undo stack, no version history, no idea restore. Reason: undo/redo requires an event-sourcing architecture that is out of scope.
+Onboarding tutorial — No interactive walkthrough, no tooltip tour, no coach marks. Reason: the empty state and first LLM question are sufficient onboarding for v0.1.
+
+AI / LLM Non-Goals
+
+Multiple LLM providers — No provider switcher, no Gemini, no GPT-4 option. One LLM integration (mock in v0.1, single provider in v0.2). Reason: provider abstraction adds complexity before product-market fit.
+Fine-tuning / training — No model fine-tuning, no LoRA, no dataset collection. Reason: fine-tuning requires labeled data and ML infrastructure — far out of scope.
+Voice input — No speech-to-text, no microphone access. Text only. Reason: voice UX is a separate product surface with its own latency and accuracy challenges.
+Image / file attachments — No photo upload, no document attachment to ideas. Text only. Reason: file handling requires storage (a non-goal above) and complicates the LLM context.
+
+Enforcement
+Any PR that introduces code, dependencies, or configuration related to the above non-goals will be automatically rejected by CI or manually rejected by the maintainer during review. If you believe a non-goal should be reconsidered for v0.2, open an issue with a proposal — do not open a PR.
 
 ## 4. DATA CONTRACTS
 
